@@ -1,7 +1,7 @@
 ---
 title: "¿Existe una relación espacial entre el envejecimiento poblacional, la renta media y la disponibilidad de servicios de salud en los municipios de la provincia de València?"
 author: "María Martín Leboreiro"
-date: "27 mayo" 
+date: "Mayo de 2025" 
 format: pdf
 editor: visual
 ---
@@ -60,7 +60,7 @@ En esta sección, vamos a hablar sobre los conjuntos de datos que se utilizaron 
 
 La información sobre el envejecimiento de la población se recopiló de fuentes oficiales a nivel municipal, como los datos demográficos proporcionados por el Instituto Nacional de Estadística (INE). Este conjunto de datos incluye indicadores demográficos por municipio que describen la estructura de edades de la población en la provincia de València. En particular, ofrece datos desglosados por franjas de edad que permiten calcular medidas de envejecimiento, como la proporción de personas mayores de 65 años en cada localidad. Esta información es clave para identificar el grado de envejecimiento en cada municipio, lo que resulta fundamental para analizar su distribución espacial y su relación con la disponibilidad de servicios de salud y la renta per cápita municipal.\
 
-```{r}
+```{r, include=FALSE}
 library(readxl)
 library(dplyr)
 library(stringr)
@@ -96,7 +96,7 @@ datos_limpios <- datos_limpios %>% select(-`...1`)
 
 La variable de renta media per cápita municipal se obtiene también de fuentes oficiales (las estadísticas de ingresos por municipio del INE) . Este conjunto de datos refleja la renta media anual por habitante (en euros) para cada municipio de la provincia de València, y es un indicador socioeconómico fundamental. En el análisis, utilizaremos esta variable para investigar posibles correlaciones entre el nivel de ingresos de la población, el envejecimiento demográfico y la disponibilidad de servicios de salud.
 
-```{r}
+```{r, include=FALSE}
 setwd("~/Desktop/Datos espaciales y espaciotemporales/Practica_final")
 renta <- read_excel("31250.xlsx")
 
@@ -110,7 +110,7 @@ renta_limpia <- renta %>%
 
 El tercer conjunto de datos se refiere a las zonas básicas de salud, que son los departamentos de salud de la Comunitat Valenciana. Estos datos han sido obtenidos de fuentes oficiales de salud, específicamente de la Conselleria de Sanitat de la Generalitat Valenciana. Se trata de información geoespacial en formato GeoPackage, que incluye los polígonos que delimitan cada zona o departamento de salud en la región. Para este estudio, se han seleccionado solo aquellas zonas cuyos departamentos de salud están ubicados en la provincia de València. Esto nos permite crear una capa geográfica que muestra las áreas de cobertura del sistema sanitario en la provincia, la cual se utilizará para analizar la distribución espacial de los servicios de salud en relación con otras variables del estudio.
 
-```{r}
+```{r, include=FALSE}
 setwd("~/Desktop/Datos espaciales y espaciotemporales/Practica_final")
 zonas_salud <- st_read("15_SistemaValencianoSalud.gpkg")
 
@@ -136,7 +136,7 @@ zonas_valencia <- zonas_salud %>%
 
 Por último, se añadieron los límites geográficos de los municipios de la provincia de València para dar un contexto espacial a la información. Para esto, se utilizó la plataforma abierta OpenStreetMap a través de su API, utilizando el paquete osmdata de R. Con esta herramienta, se descargaron los polígonos administrativos de nivel municipal (admin_level 8) que corresponden a la provincia. Una vez que se obtuvieron estos polígonos, se filtraron los resultados para quedarnos solo con los municipios que aparecen en el conjunto de datos demográficos, cruzando por el nombre de cada municipio. Después, se eliminaron los campos innecesarios, lo que nos permitió crear un objeto espacial simplificado (municipios_valencia_clean) que solo contiene el nombre y la geometría de cada municipio. La capa resultante de municipios se utilizará para visualizar los datos en mapas y facilitar la comparación espacial entre los indicadores de envejecimiento y renta por municipio, así como la distribución geográfica de las zonas de salud.
 
-```{r eval = FALSE}
+```{r, include=FALSE}
 library(sf)
 library(osmdata)
 library(dplyr)
@@ -220,7 +220,7 @@ municipios_valencia_clean <- municipios_valencia_clean %>%
 
 En este bloque, llevamos a cabo un análisis estadístico inicial y visual de las dos variables clave del estudio: el número de personas mayores de 65 años en cada municipio y la renta neta per cápita. Para ello, utilizamos histogramas, diagramas de caja (boxplots) y diversas medidas de resumen estadístico que nos ayudan a entender la distribución de cada variable y a identificar posibles valores atípicos.
 
-```{r}
+```{r, include=FALSE}
 library(dplyr)
 
 setwd("~/Desktop/Datos espaciales y espaciotemporales/Practica_final")
@@ -241,9 +241,7 @@ municipios_valencia_clean <- municipios_valencia_clean %>%
 # Crear columna logaritmo base 10 para mayores de 65
 municipios_valencia_clean <- municipios_valencia_clean %>%
   mutate(log_mayores_65 = log10(mayores_65 + 1))
-```
 
-```{r}
 # Histograma de mayores_65 con escala log
 library(ggrepel)
 library(scales)
@@ -254,7 +252,7 @@ municipios_valencia_clean <- readRDS("municipios_valencia_clean.rds")
 top_muni <- municipios_valencia_clean %>%
   slice_max(order_by = mayores_65, n = 5)
 
-ggplot(municipios_valencia_clean, aes(x = mayores_65)) +
+hist_mayores<- ggplot(municipios_valencia_clean, aes(x = mayores_65)) +
   geom_histogram(fill = "steelblue", bins = 30, alpha = 0.7) +
   geom_text_repel(data = top_muni,
                   aes(x = mayores_65, y = 2, label = name),
@@ -265,15 +263,21 @@ ggplot(municipios_valencia_clean, aes(x = mayores_65)) +
   labs(title = "Distribución (log) de personas mayores de 65 años",
        x = "Nº personas mayores (escala log)", y = "Frecuencia") +
   theme_minimal()
+```
+
+-   Histograma de población mayor de 65 años
+
+```{r, echo=FALSE, warning=FALSE}
+hist_mayores
 
 ```
 
-```{r}
+```{r, include=F}
 # Histograma de renta_per_capita con densidad
 top_renta <- municipios_valencia_clean %>%
   slice_max(order_by = renta_per_capita, n = 3)
 
-ggplot(municipios_valencia_clean, aes(x = renta_per_capita)) +
+hist_renta<- ggplot(municipios_valencia_clean, aes(x = renta_per_capita)) +
   geom_histogram(fill = "darkgreen", bins = 30, alpha = 0.7) +
   geom_density(aes(y = ..density..), color = "black", size = 1) +
   geom_text_repel(data = top_renta,
@@ -285,20 +289,34 @@ ggplot(municipios_valencia_clean, aes(x = renta_per_capita)) +
   labs(title = "Distribución de renta neta per cápita",
        x = "Renta per cápita (€)", y = "Frecuencia / Densidad") +
   theme_minimal()
-```
-
-```{r}
 # Boxplot de mayores_65 (escala log)
-ggplot(municipios_valencia_clean, aes(x = log_mayores_65)) +
+box_65<- ggplot(municipios_valencia_clean, aes(x = log_mayores_65)) +
   geom_boxplot(fill = "lightblue") +
   labs(title = "Boxplot: personas mayores de 65 años (log10)",
        x = "log10(Nº personas mayores)") +
   theme_minimal()
+# Boxplot de renta_per_capita
+box_renta<- boxplot(municipios_valencia_clean$renta_per_capita,
+        main = "Boxplot: renta per cápita",
+        col = "lightgreen", horizontal = TRUE)
 ```
 
-```{r}
-# Boxplot de renta_per_capita
-boxplot(municipios_valencia_clean$renta_per_capita,
+-   Histograma de renta per cápita
+
+```{r, echo=F, warning=F}
+hist_renta
+```
+
+-   Boxplot de población mayor de 65 años
+
+```{r, echo=FALSE, warning=FALSE}
+box_65
+```
+
+-   Boxplot de renta per cápita
+
+```{r, echo=FALSE, warning=FALSE}
+box_renta<- boxplot(municipios_valencia_clean$renta_per_capita,
         main = "Boxplot: renta per cápita",
         col = "lightgreen", horizontal = TRUE)
 ```
@@ -330,7 +348,7 @@ Los pasos clave para crear estos mapas son los siguientes:
 
 -   Finalmente, ***genera el mapa coroplético*** de renta_per_capita de manera similar, coloreando según la renta y etiquetando los 3 municipios con la renta per cápita más alta.
 
-```{r}
+```{r, include=FALSE}
 library(sf)
 library(ggplot2)
 library(dplyr)
@@ -344,13 +362,9 @@ top_mayores <- municipios_valencia_clean %>%
   slice_max(order_by = mayores_65, n = 3)
 top_renta <- municipios_valencia_clean %>%
   slice_max(order_by = renta_per_capita, n = 3)
-
-```
-
-```{r}
 # Mapa de población mayor de 65 años (log)
 
-ggplot(municipios_valencia_clean) +
+distr_65<- ggplot(municipios_valencia_clean) +
   geom_sf(aes(fill = log_mayores_65), color = "white", size = 0.1) +
   scale_fill_viridis_c(option = "inferno", name = "log10 mayores 65") +
   geom_text_repel(data = top_mayores,
@@ -360,12 +374,8 @@ ggplot(municipios_valencia_clean) +
                   size = 3, color = "black") +
   labs(title = "Distribución (log) de personas mayores de 65 años") +
   theme_minimal()
-
-```
-
-```{r}
 # Mapa de renta per cápita
-ggplot(municipios_valencia_clean) +
+distr_renta<-ggplot(municipios_valencia_clean) +
   geom_sf(aes(fill = renta_per_capita), color = "white", size = 0.1) +
   scale_fill_viridis_c(option = "plasma", direction = -1, name = "€ per cápita") +
   geom_text_repel(data = top_renta,
@@ -377,6 +387,18 @@ ggplot(municipios_valencia_clean) +
   labs(title = "Renta neta per cápita por municipio") +
   theme_minimal()
 
+```
+
+-   Distribución (log) de personas mayores de 65 años
+
+```{r, echo=FALSE, warning=FALSE}
+distr_65
+```
+
+-   Renta neta per cápita por municipio
+
+```{r, echo=FALSE, warning=FALSE}
+distr_renta
 ```
 
 El análisis visual a través de mapas coropléticos nos muestra patrones espaciales muy interesantes en la provincia de València, especialmente en lo que respecta al envejecimiento de la población y la renta per cápita. En el primer mapa, que representa el número total de personas mayores de 65 años (en una escala logarítmica), se puede ver que los municipios con más población envejecida se agrupan, como era de esperar, en las zonas más densamente pobladas.
@@ -395,7 +417,7 @@ En este apartado, vamos a explorar si hay un patrón en la distribución de la p
 
 Empleamos el ***método de vecinos contiguos*** (queen contiguity), creamos una ***matriz de pesos espaciales*** y aplicamos el ***test de Moran*** a nuestras dos variables principales. Después, presentaremos una tabla resumen con los resultados y su interpretación.
 
-```{r}
+```{r, include=FALSE}
 # Librerías necesarias
 library(sf)
 library(spdep)
@@ -415,11 +437,6 @@ moran_mayores <- moran.test(datos_moran$mayores_65, pesos, zero.policy = TRUE)
 
 # Calcular Moran para renta_per_capita
 moran_renta <- moran.test(datos_moran$renta_per_capita, pesos, zero.policy = TRUE)
-```
-
-Creamos la tabla de resultados:
-
-```{r}
 # Crear tabla con resultados
 tabla_moran <- tibble(
   Variable = c("Proporción mayores de 65", "Renta per cápita"),
@@ -432,7 +449,7 @@ tabla_moran <- tibble(
 )
 
 # Visualización de la tabla
-tabla_moran %>%
+tabla_moran_graf<- tabla_moran %>%
   gt() %>%
   tab_header(
     title = md("**Resultados del Índice de Moran**"),
@@ -465,6 +482,12 @@ tabla_moran %>%
   )
 ```
 
+Creamos la tabla de resultados:
+
+```{r, echo=FALSE, warning=FALSE}
+tabla_moran_graf
+```
+
 Los resultados del test de Moran nos dicen lo siguiente:
 
 -   La proporción de personas mayores de 65 años tiene un índice de Moran de 0.48, con un p-valor muy bajo (\< 0.001). Esto sugiere una **autocorrelación espacial positiva alta y estadísticamente significativa**. En otras palabras, los municipios con una mayor proporción de personas mayores tienden a agruparse, lo que indica una cierta homogeneidad en el espacio. Este patrón podría estar relacionado con áreas más interiores o rurales de la provincia, donde el envejecimiento suele ser más pronunciado.\
@@ -477,7 +500,7 @@ Este bloque se enfoca en el análisis espacial local a través del cálculo del 
 
 Para llevar a cabo esto, utilizamos los resultados del ***test de Moran local (\`localmoran\`)*** junto con el cálculo del valor promedio de los ***vecinos inmediatos***. Con base en estos valores y sus respectivas significancias *(\`p-value\`)*, clasificamos cada municipio según el tipo de clúster al que pertenece. Al final, creamos dos mapas coropléticos con etiquetas representativas que nos permiten identificar visualmente los clústeres más relevantes.
 
-```{r}
+```{r, include= F}
 # Librerías necesarias
 library(sf)
 library(spdep)
@@ -545,13 +568,8 @@ representativos_renta <- datos_lisa %>%
   filter(cluster_renta != "No significativo") %>%
   group_by(cluster_renta) %>%
   slice_max(order_by = renta_per_capita, n = 1)
-```
-
-Y la visualización de los resultados:
-
-```{r}
 # Mapa LISA: Mayores 65+
-ggplot(datos_lisa) +
+lisa_65<- ggplot(datos_lisa) +
   geom_sf(aes(fill = cluster_mayores), color = "white", size = 0.2) +
   scale_fill_manual(
     values = c("Alto-Alto" = "#b30000", "Bajo-Bajo" = "#08519c",
@@ -566,9 +584,8 @@ ggplot(datos_lisa) +
   ) +
   labs(title = "Mapa LISA: Proporción mayores de 65 años") +
   theme_minimal()
-
 # Mapa LISA: Renta per cápita
-ggplot(datos_lisa) +
+lisa_renta<- ggplot(datos_lisa) +
   geom_sf(aes(fill = cluster_renta), color = "white", size = 0.2) +
   scale_fill_manual(
     values = c("Alto-Alto" = "#b30000", "Bajo-Bajo" = "#08519c",
@@ -583,6 +600,21 @@ ggplot(datos_lisa) +
   ) +
   labs(title = "Mapa LISA: Renta neta per cápita") +
   theme_minimal()
+
+```
+
+Y la visualización de los resultados:
+
+-   Mapa LISA: Mayores 65+
+
+```{r, echo=FALSE, warning=FALSE}
+lisa_65
+```
+
+-   Mapa LISA: Renta per cápita
+
+```{r, echo=FALSE, warning=FALSE}
+lisa_renta
 ```
 
 Los mapas LISA revelan una notable presencia de clústeres espaciales significativos en diversas áreas de la provincia de València, tanto en lo que respecta a la proporción de población mayor de 65 años como a la renta per cápita.
@@ -603,7 +635,7 @@ Para abordar este tema, primero calculamos la distancia desde cada municipio has
 
 -   DISTANCIA A CENTROS DE SALUD
 
-```{r}
+```{r, include=FALSE}
 # Cargar librerías
 library(sf)
 library(dplyr)
@@ -649,9 +681,8 @@ coords_salud_all <- st_coordinates(health_centroids)
 health_centroids_df <- health_centroids %>%
   st_drop_geometry() %>%
   mutate(X = coords_salud_all[,1], Y = coords_salud_all[,2])
-
 # Visualizar mapa
-ggplot() +
+dist<- ggplot() +
   geom_sf(data = municipios_valencia_clean, fill = NA, color = "gray60") +
   geom_point(data = health_centroids_df,
              aes(x = X, y = Y),
@@ -663,13 +694,20 @@ ggplot() +
   theme_void() +
   theme(panel.background = element_rect(fill = "gray95"),
         legend.position = "none")
+
+```
+
+Visualizamos el mapa:
+
+```{r, echo=FALSE, warning=FALSE}
+dist
 ```
 
 Este mapa ilustra de manera visual la conexión entre cada municipio de la provincia de València y su centro de salud más cercano. Las líneas azules representan estas relaciones espaciales, mientras que los puntos rojos indican la ubicación de los centros de salud. Se puede observar una distribución bastante equilibrada de los centros, con una notable concentración en el área metropolitana de València. Las líneas más largas se encuentran en las zonas rurales o periféricas, donde las distancias al centro de salud más cercano son más grandes. Esta visualización facilita la identificación de los municipios que están más aislados en términos de atención sanitaria, así como las áreas que están mejor cubiertas por la red de salud.
 
 -   CORRELACIÓN
 
-```{r}
+```{r, include=F}
 # Distancia mínima en km en el df
 municipios_valencia_clean <- municipios_valencia_clean %>%
   mutate(dist_centro_salud_km = as.numeric(distancia_min) / 1000)
@@ -681,14 +719,13 @@ cor_test <- cor.test(
   method = "pearson",
   use = "complete.obs"
 )
-
 # Resultado
-print(cor_test)
+cor_test<- print(cor_test)
 
 # Visualización de la correlación (escala logarítmica en eje Y)
 library(ggrepel)
 
-ggplot(municipios_valencia_clean, aes(x = dist_centro_salud_km, y = mayores_65)) +
+cor_test_graf<- ggplot(municipios_valencia_clean, aes(x = dist_centro_salud_km, y = mayores_65)) +
   geom_point(color = "darkred", alpha = 0.6) +
   scale_y_log10(labels = scales::label_comma(), breaks = c(10, 100, 1000, 10000, 100000)) +
   geom_smooth(method = "lm", se = TRUE, color = "black") +
@@ -706,6 +743,10 @@ ggplot(municipios_valencia_clean, aes(x = dist_centro_salud_km, y = mayores_65))
   theme_minimal()
 ```
 
+```{r, echo=F, warning=F}
+cor_test_graf
+```
+
 El coeficiente de correlación de Pearson que hemos obtenido es de **-0.1229**, con un **p-valor de 0.0599**. Esto sugiere que hay una correlación negativa muy débil entre la distancia al centro de salud más cercano y el número de personas mayores de 65 años. Aunque el resultado no es estadísticamente significativo (p \> 0.05), está bastante cerca del límite.
 
 Este hallazgo indica una ligera tendencia: en los municipios donde hay más personas mayores, la distancia al centro de salud tiende a ser menor. Sin embargo, esta relación no es fuerte ni definitiva, y hay muchos factores que podrían influir tanto en la ubicación de los servicios de salud como en la distribución de la población mayor, como la concentración urbana, la disponibilidad de servicios públicos y la accesibilidad del transporte, entre otros.
@@ -720,7 +761,7 @@ Para llevar a cabo este análisis, se ha empleado el **coeficiente de correlaci�
 
 Asimismo, en el gráfico se han resaltado los tres municipios con el mayor número de personas mayores para dar contexto a su impacto: **València, Torrent y Gandia**.
 
-```{r}
+```{r, include= F}
 library(ggplot2)
 library(dplyr)
 library(ggrepel)
@@ -732,12 +773,11 @@ cor_test_envejecimiento_renta <- cor.test(
   method = "pearson",
   use = "complete.obs"
 )
-
 # Resultados
-print(cor_test_envejecimiento_renta)
+cor_test_env<- print(cor_test_envejecimiento_renta)
 
 # Visualizar la relación
-ggplot(municipios_valencia_clean, aes(x = mayores_65, y = renta_per_capita)) +
+cor_test_muni<- ggplot(municipios_valencia_clean, aes(x = mayores_65, y = renta_per_capita)) +
   geom_point(color = "midnightblue", alpha = 0.6) +
   scale_x_log10(labels = scales::label_comma()) +
   geom_smooth(method = "lm", se = TRUE, color = "black") +
@@ -753,7 +793,10 @@ ggplot(municipios_valencia_clean, aes(x = mayores_65, y = renta_per_capita)) +
     y = "Renta per cápita (€)"
   ) +
   theme_minimal()
+```
 
+```{r, echo=F, warning=F}
+cor_test_muni
 ```
 
 Los resultados revelan una débil correlación positiva entre el número de personas mayores y la renta per cápita ***(r ≈ 0.11)***, que no resulta estadísticamente significativa ***(p ≈ 0.085)***. Esto sugiere que **no podemos afirmar que haya una relación clara y consistente entre estas dos variables en los municipios de la provincia**.
@@ -778,7 +821,7 @@ Por eso, en esta parte hemos querido ir un paso más allá: **hemos normalizado
 
 Para ello, hemos aplicado una **regresión lineal simple**, donde tratamos de predecir esa proporción de personas mayores a partir de la renta per cápita.
 
-```{r}
+```{r, include=FALSE}
 library(dplyr)
 library(ggplot2)
 library(ggrepel)
@@ -792,15 +835,18 @@ municipios_valencia_clean <- municipios_valencia_clean %>%
 # Modelo de regresión lineal
 modelo1 <- lm(mayores_65_norm ~ renta_per_capita, data = municipios_valencia_clean)
 summary(modelo1)
-
 # Visualizar 
 library(ggplot2)
-ggplot(municipios_valencia_clean, aes(x = renta_per_capita, y = mayores_65_norm)) +
+rl<-ggplot(municipios_valencia_clean, aes(x = renta_per_capita, y = mayores_65_norm)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) +
   labs(x = "Renta per cápita", 
        y = "Proporción de mayores de 65 años",
        title = "Relación entre renta per cápita y proporción de mayores (Valencia)")
+```
+
+```{r, echo=F, warning=F}
+rl
 ```
 
 Los resultados del modelo muestran lo siguiente:
@@ -823,7 +869,7 @@ Para ello, dividimos el análisis en dos partes: primero representamos gráficam
 
 -   CÁLCULO Y VISUALIZACIÓN DE LOS RESIDUOS
 
-```{r}
+```{r, include=F}
 
 library(sf)
 library(ggplot2)
@@ -853,9 +899,8 @@ municipios_valencia_residuos <- municipios_valencia_residuos %>%
 municipios_extremos <- municipios_valencia_residuos %>%
   filter(!is.na(residuos)) %>%
   slice_max(order_by = abs(residuos), n = 5)
-
 # Visualizar mapa de residuos
-ggplot(data = municipios_valencia_residuos) +
+resid<- ggplot(data = municipios_valencia_residuos) +
   geom_sf(aes(fill = residuos), color = "gray90", size = 0.2) +
   scale_fill_gradient2(
     low = "firebrick", mid = "white", high = "blue", midpoint = 0,
@@ -880,13 +925,18 @@ ggplot(data = municipios_valencia_residuos) +
     legend.title = element_text(size = 10),
     legend.text = element_text(size = 8)
   )
+
+```
+
+```{r, echo=F, warning=F}
+resid
 ```
 
 El gráfico nos muestra cómo se distribuyen espacialmente los residuos del modelo. Podemos observar que el municipio de València presenta un residuo extremadamente alto, seguido por municipios cercanos como **Torrent o Paterna**. Esto sugiere que el modelo está **sobreestimando** o **infraestimando** de forma importante la población mayor en estos municipios, posiblemente porque no captura del todo la estructura demográfica o el peso urbano de estas localidades. Estos valores extremos podrían deberse a factores omitidos como la densidad de población, la accesibilidad urbana o el nivel de servicios sanitarios.
 
 -   ÍNDICE MORAN DE LOS RESIDUOS (TEST DE AUTOCORRELACIÓN ESPACIAL)
 
-```{r}
+```{r, include=F}
 library(spdep)
 
 # Filtrar municipios sin NA en residuos
@@ -912,8 +962,7 @@ tabla_moran <- data.frame(
                       "No hay autocorrelación espacial significativa",
                       "Autocorrelación espacial significativa")
 )
-
-tabla_moran %>%
+tabla_indice_residuos <- tabla_moran %>%
   gt() %>%
   tab_header(
     title = md("**Resumen del test de Moran**"),
@@ -949,6 +998,10 @@ tabla_moran %>%
   )
 ```
 
+```{r, echo=F, warning=F}
+tabla_indice_residuos
+```
+
 El valor obtenido para el estadístico de Moran I ha sido de aproximadamente **0.004**, con un p-valor de **0.277**, lo que indica que **no hay evidencia estadística de autocorrelación espacial significativa** en los residuos del modelo. En otras palabras, los errores no parecen estar distribuidos de manera agrupada en el espacio.
 
 Esto es un buen indicio para la validez del modelo, ya que sugiere que no hemos omitido variables clave con un fuerte componente espacial. Si los residuos se hubieran agrupado espacialmente, eso sería señal de que el modelo no está explicando adecuadamente ciertas dinámicas territoriales.
@@ -965,7 +1018,7 @@ El objetivo principal de este análisis es detectar si la relación entre renta 
 
 -   GWR
 
-```{r}
+```{r, include=F}
 library(sf)
 library(dplyr)
 library(spgwr)
@@ -1021,7 +1074,7 @@ etiquetas_gwr <- modelo_gwr_sf %>%
   slice(1:5)
 
 # Gráfico del R2 local
-ggplot(modelo_gwr_sf) +
+r2_local<- ggplot(modelo_gwr_sf) +
   geom_sf(aes(fill = local_r2), color = "white", size = 0.1, alpha = 0.9) +
   scale_fill_viridis_c(
     name = expression(R^2 ~ local),
@@ -1051,11 +1104,15 @@ ggplot(modelo_gwr_sf) +
   )
 ```
 
+```{r, echo=FALSE, warning=F}
+r2_local
+```
+
 Tras ajustar el modelo GWR, se generó un mapa que representa la bondad de ajuste local (R²) en cada municipio. Observamos que el modelo tiene un mejor ajuste en la zona interior de la provincia, destacando municipios como **Buñol o Macastre**. Este patrón podría reflejar que, en esas zonas, la renta tiene un papel más claro y directo en la distribución de la población envejecida, mientras que en otras zonas (como en el sur o en los entornos más urbanos) hay otros factores que podrían estar influyendo y que no se capturan con este modelo.
 
 -   COEFICIENTE LOCAL DE RENTA PER CÁPITA
 
-    ```{r}
+    ```{r, include=F}
     library(sf)
     library(dplyr)
     library(spgwr)
@@ -1069,7 +1126,7 @@ Tras ajustar el modelo GWR, se generó un mapa que representa la bondad de ajust
     # El coeficiente de 'renta_per_capita.y' estará como '(Intercept)' y luego el predictor, probablemente llamado 'renta_per_capita.y'
 
     # Creamos el histograma usando la columna correcta
-    ggplot(modelo_gwr_resultados, aes(x = renta_per_capita)) +
+    coef_local<- ggplot(modelo_gwr_resultados, aes(x = renta_per_capita)) +
       geom_histogram(aes(y = ..density..), bins = 30, fill = "royalblue", color = "black", alpha = 0.6) +
       geom_density(color = "blue", size = 1) +
       labs(
@@ -1079,6 +1136,10 @@ Tras ajustar el modelo GWR, se generó un mapa que representa la bondad de ajust
       ) +
       theme_minimal(base_size = 13)
     ```
+
+```{r, echo=F, warning=F}
+coef_local
+```
 
 El histograma muestra una distribución concentrada del coeficiente local **alrededor del valor 1**, con ligeras desviaciones hacia ambos lados. Esto indica que, en la mayoría de los municipios, la renta per cápita tiene un efecto similar sobre la proporción de mayores de 65 años, aunque con matices locales que pueden estar relacionados con dinámicas socioeconómicas específicas. Esta dispersión sugiere que el fenómeno del envejecimiento no responde de forma homogénea a la renta en todo el territorio, lo que justifica el uso de modelos espaciales.
 
@@ -1111,6 +1172,12 @@ Para futuras investigaciones, sería interesante:
 -   O explorar la escala intraurbana, especialmente en grandes municipios como la capital de València.
 
     En definitiva, aunque los resultados no han sido los que esperábamos, han sido muy valiosos. Este análisis ha demostrado tanto el potencial como las limitaciones del análisis espacial al trabajar con datos socioeconómicos, así como la importancia de contrastar nuestras hipótesis con evidencia empírica sólida.
+
+## Anexo
+
+En el siguiente repositorio de Github se encuentra la práctica con el código completo desarrollado:
+
+**https://github.com/mariamartinleboreiro/practica_final_datos.git**
 
 ## Bibliografía
 
